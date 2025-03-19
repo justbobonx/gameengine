@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Get'em</title>
+<style>
+
+@font-face {
+  font-family: "Arcade";
+  src: url("ARCADE_N.TTF");
+}
+
+body {
+  background:#000000;
+  font: 13px sans-serif;
+  position: relative;
+  text-align: center;
+}
+
+.text
+{	
+	position: absolute;
+	text-align: center;
+	font: 20px Arcade;
+	color: #FFFFFF;
+	text-shadow: 3px 3px 1px #000000;
+}
+
+.title
+{	
+	position: absolute;
+	text-align: center;
+	font: 60px Arcade;
+	color: #bbcc99;
+	text-shadow: 5px 5px 2px #000000;
+}
+
+canvas {  
+  width: 1200px;
+  height: 900px;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+
+
+</style>
+
+<html>
+<body style='margin:0px;'>
+<div id="game_box" style="position:relative;width:1200px;display:inline-block;margin: 0 auto;"></div>
+</body>
+</html>
+
+<script src="./libs/jquery.min.js"></script>
+<script src="./libs/d3.v3.min.js"></script>
+<script src="./libs/jquery.cookie.min.js"></script>
+<script src="./libs/state_cookie.js"></script>
+
+<script src="./bobs_completely_adequate_js_game_engine.js"></script>
+
+<script src="./getem.js"></script>
