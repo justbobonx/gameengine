@@ -1,6 +1,6 @@
 /*
  * testit.js
- * Tests the updated BAGE engine
+ * Tests the updated BAGE engine with larger grid-aligned terrain
  *
  * Code Format: Use 2-space tabs for indentation
  */
@@ -17,156 +17,194 @@ var level;
 var loc = { x: 0, y: 0 };
 
 var marioSpeed = 2;
-
 var mario;
 
-window.onload = function () {  
-  game.graphics.setupGfx(400, 300);
+const game = new Game();
 
-  // Set up text boxes using the engine's addTextBox method
+window.onload = function () {  
+  game.graphics.setupGfx(800, 600);
+
+  // Set up text boxes
   scoreLbl = game.graphics.addTextBox({
     posx: -10,
-    posy: 0,
+    posy: 10,
     width: 300,
-    font: "10px Arial",
+    font: "12px Arial",
     align: "right",
     text: ""
   });
 
   levelLbl = game.graphics.addTextBox({
     posx: 10,
-    posy: 0,
+    posy: 10,
     width: 300,
-    font: "10px Arial",
+    font: "12px Arial",
     align: "left",
-    text: ""
+    text: "Level 1"
   });
 
   // Create Mario sprite
-  mario = new Sprite(game.graphics, {
+  mario = new Sprite({
     url: "guy.png",
     tileWidth: 10,
     tileHeight: 16,
     hitoffx: 2,
     hitoffy: 3,
     hitWidth: 6,
-    hitHeight: 12,     
+    hitHeight: 12,
     tileOrX: 5,
     tileOrY: 15,    
     speed: 6,
     frameCount: 2,
     aniSpeed: 150,
-    x: game.graphics.canvas.width / 2,
-    y: 100,
+    x: 200,
+    y: 96,
     onUpdate: function (frameRatio) {
       this.onFloor = this.hitTestList(this.x, Math.round(this.y + 1), obstacles);
       if (this.onFloor) {
         this.speedy = Math.min(this.speedy, 0);
       } else {
-        this.speedy += 0.25 * frameRatio; // Gravity scaled by frameRatio
+        this.speedy += 0.25 * frameRatio;
       }
-
-      // Update camera location
-      if (this.x + loc.x < 80) {
-        loc.x = 80 - this.x;
-      } else if (game.graphics.canvas.width - (this.x + loc.x) < 80) {
-        loc.x = game.graphics.canvas.width - 80 - this.x;
-      }
-      if (this.y + loc.y < 80) {
-        loc.y = 80 - this.y;
-      } else if (game.graphics.canvas.height - (this.y + loc.y) < 80) {
-        loc.y = game.graphics.canvas.height - 80 - this.y;
-      }
-      game.graphics.loc = loc; // Update graphics loc for rendering
 
       // Handle jump
       if (this.jump) {
         this.jump = null;
         this.framei = null;
         if (this.onFloor) {
-          this.speedy = -3; // Jump strength
+          this.speedy = -3;
         }
       }
+
+      // Check for fall-off and reset
+      if (this.y > 1000) {
+        this.put(200, middleY - 40, obstacles);
+        this.speedx = 0;
+        this.speedy = 0;
+      }
+
+      // Camera following
+      if (this.x + loc.x < 80) {
+        loc.x = 80 - this.x;
+      } else if (game.graphics.canvas.width - (this.x + loc.x) < 80) {
+        loc.x = game.graphics.canvas.width - 80 - this.x;
+      }
+      if (this.y + loc.y < 100) {
+        loc.y = 100 - this.y;
+      } else if (game.graphics.canvas.height - (this.y + loc.y) < 100) {
+        loc.y = game.graphics.canvas.height - 100 - this.y;
+      }
+      game.graphics.loc = loc;
     }
   });
   sprites.push(mario);
-  game.graphics.obstacles = obstacles; // Assign obstacles to graphics
+  game.graphics.obstacles = obstacles;
 
-  // Create ground obstacles
-  var ground = new Sprite(game.graphics, {
-    color: "#999988",
-    tileWidth: 128,
-    tileHeight: 16,
-    x: game.graphics.canvas.width / 2 - 64,
-    y: game.graphics.canvas.height - 30 - 16
-  });
-  obstacles.push(ground);
-
-  ground = new Sprite(game.graphics, {
-    color: "#99aa88",
-    tileWidth: 40,
-    tileHeight: 40,
-    x: game.graphics.canvas.width / 2 - 64 - 40,
-    y: game.graphics.canvas.height - 30 - 34
-  });
-  obstacles.push(ground);
-  
-  ground = new Sprite(game.graphics, {
-    color: "#99cc88",
-    tileWidth: 10,
-    tileHeight: 20,
-    x: game.graphics.canvas.width / 2 - 64,
-    y: game.graphics.canvas.height - 30 - 24
-  });
-  obstacles.push(ground);
-  
-  ground = new Sprite(game.graphics, {
-    color: "#99cc88",
-    tileWidth: 10,
-    tileHeight: 20,
-    x: game.graphics.canvas.width / 2 + 64 - 10,
-    y: game.graphics.canvas.height - 30 - 24,
-    flipx: true
-  });
-  obstacles.push(ground);
-
-  ground = new Sprite(game.graphics, {
-    color: "#999988",
-    tileWidth: 40,
-    tileHeight: 80,
-    x: game.graphics.canvas.width / 2 + 64,
-    y: game.graphics.canvas.height - 30 - 80
-  });
-  obstacles.push(ground);
+  // Generate larger procedural terrain and get middle platform Y
+  const middleY = generateTerrain();
 
   // Initialize game state
   score = 0;
   level = 1;
   mario.visible = true;
-  mario.put(game.graphics.canvas.width / 2, game.graphics.canvas.height / 2, obstacles);
+  mario.put(0, middleY - 60);
+  game.graphics.loc.x = mario.x - game.graphics.canvas.width / 2;
+  game.graphics.loc.y = mario.y - game.graphics.canvas.height / 2;
 
-  // Set up the game loop
-  game.setTickCallback( game_tick );
-  game.setStepCallback( game_step );
-  
+  // Set up game loop
+  game.setTickCallback(game_tick);
+  game.setStepCallback(game_step);
   game.setGameState("running");  
 }
 
- 
+function hslToHex(h, s, l) {
+  s /= 100;
+  l /= 100;
+  let c = (1 - Math.abs(2 * l - 1)) * s;
+  let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  let m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+
+  if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else if (h < 360) { r = c; g = 0; b = x; }
+
+  r = Math.round((r + m) * 255).toString(16).padStart(2, '0');
+  g = Math.round((g + m) * 255).toString(16).padStart(2, '0');
+  b = Math.round((b + m) * 255).toString(16).padStart(2, '0');
+
+  return `#${r}${g}${b}`;
+}
+
+const gridSize = 8;
+
+function randInt(min, max) {
+  const range = max - min;
+  const randomStep = Math.floor(Math.random() * (range + 1));
+  return (min + randomStep) * gridSize;
+}
+
+function generateTerrain() {
+  const canvasWidth = game.graphics.canvas.width;
+  const canvasHeight = game.graphics.canvas.height;
+  
+  let currentX = -2000; // Left edge
+  let currentTopY = canvasHeight - gridSize * randInt(2, 4); 
+  let midX, midY;
+
+  while (currentX < 2000) {
+    const width = randInt(1, 6);
+    const scaleX = width / 32;
+    const height = randInt(2, 6);
+    const scaleY = height / 32;
+    
+    const hue = Math.floor(Math.random() * 361);
+    const saturation = Math.floor(Math.random() * 11) + 90;
+    const lightness = 50;
+    const color = hslToHex(hue, saturation, lightness);
+   
+    const platform = new Sprite({
+      url: "floor.png",
+      image_blend: color,
+      scalex: scaleX,
+      scaley: scaleY,
+      x: currentX,
+      y: currentTopY
+    });
+    obstacles.push(platform);
+    
+    if (currentX < 0 && currentX + width > 0) {
+      midY = currentTopY;
+    }
+    
+    currentX += width + randInt(-2, 4);
+    currentTopY += randInt(-2, 2);
+  }
+
+  return midY;
+}
+
 function game_tick(ratio) {
   updateMarioDir();
 }
 
 function game_step(ratio) {
-  scoreLbl.innerHTML = `x: ${mario.x.toFixed(1)}, y:${mario.y.toFixed(1)}  ${mario.onFloor ? "F" : " "} ${mario.flipx ? "-" : ""}<br>` +
-    `Sx:${mario.speedx.toFixed(1).padStart(5, " ")}  Sy:${mario.speedy.toFixed(1).padStart(5, " ")}`;
+  scoreLbl.innerHTML = 
+    `X: ${mario.x.toFixed(1).padStart(6)}  Y: ${mario.y.toFixed(1).padStart(6)}<br>` +
+    `Sx: ${mario.speedx.toFixed(1).padStart(4)}  Sy: ${mario.speedy.toFixed(1).padStart(4)}  ` +
+    `${mario.onFloor ? "Floor" : "Air"}  Facing: ${mario.facingx}`;
+
+  // Draw controller debug
+  drawControllerDebug();
 }
-  
-  
-// Override drawBg to set a solid background color
+
 game.graphics.drawBg = function () {
   game.graphics.ctx.fillStyle = "#111133";
   game.graphics.ctx.fillRect(0, 0, game.graphics.canvas.width, game.graphics.canvas.height);
+   drawControllerDebug();
 };
 
 function updateMarioDir() {
@@ -177,16 +215,42 @@ function updateMarioDir() {
 
   if (controller.iLeft) mario.speedx -= marioSpeed;
   if (controller.iRight) mario.speedx += marioSpeed;
-  //if (controller.iUp) mario.speedy -= marioSpeed;
-  //if (controller.iDown) mario.speedy += marioSpeed;
 
-  if (controller.iBtnAd) { // 'X' key pressed for jump
+  if (controller.iBtnA) {
     if (!mario.jump) {
       mario.jump = new Date().getTime();
+      mario.jumped = true;
       mario.framei = 2;
     }
+  }  
+
+  if (mario.speedx < 0) mario.facingx = -1;
+  else if (mario.speedx > 0) mario.facingx = 1;
+}
+
+// New function to draw controller debug in upper left
+function drawControllerDebug() {
+  const controller = game.controllers.getController();
+  const ctx = game.graphics.ctx;
+
+  // Save context state and set up text styling
+  ctx.save();
+  ctx.font = "10px monospace";
+  ctx.fillStyle = "white";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+
+  // Position starting at top-left (10, 10)
+  let x = 10;
+  let y = 10;
+  const lineHeight = 12;
+
+  // Helper function to add a line of text
+  function addLine(label, value) {
+    ctx.fillText(`${label.padEnd(10)}: ${value}`, x, y);
+    y += lineHeight;
   }
 
-  if (mario.speedx < 0) mario.flipx = true;
-  else if (mario.speedx > 0) mario.flipx = false;
+  // Restore context state
+  ctx.restore();
 }
