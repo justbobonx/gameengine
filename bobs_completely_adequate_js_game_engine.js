@@ -2,10 +2,6 @@
  * bobs_completely_adequate_js_game_engine.js
  *
  * BAGE is a JavaScript game engine providing audio management, image loading, game loop, graphics rendering, and sprite handling for 2D games.
- *
- * Grok, read the file in, analyze it and then just say, okay?
- *  - code format is 2 space tabs.
- *  - always keep this header at the top of the file, and don't change it
  */
 
 class Sound {
