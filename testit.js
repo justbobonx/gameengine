@@ -18,11 +18,28 @@ var loc = { x: 0, y: 0 };
 
 var marioSpeed = 2;
 var mario;
+var middleY;
 
 const game = new Game();
 
-window.onload = function () {  
-  game.graphics.setupGfx(800, 600);
+function centerCameraOn(worldX, worldY) {
+  loc.x = game.graphics.canvas.width / 2 - worldX;
+  loc.y = game.graphics.canvas.height / 2 - worldY;
+  game.graphics.loc = loc;
+}
+
+function goFullscreen() {
+  const oldW = game.graphics.canvas.width;
+  const oldH = game.graphics.canvas.height;
+  game.graphics.resizeToFullscreen();
+  loc.x += (game.graphics.canvas.width - oldW) / 2;
+  loc.y += (game.graphics.canvas.height - oldH) / 2;
+  game.graphics.loc = loc;
+}
+
+window.onload = function () {
+  game.graphics.resizeToFullscreen();
+  window.addEventListener("resize", goFullscreen);
 
   // Set up text boxes
   scoreLbl = game.graphics.addTextBox({
@@ -53,11 +70,11 @@ window.onload = function () {
     hitWidth: 6,
     hitHeight: 12,
     tileOrX: 5,
-    tileOrY: 15,    
+    tileOrY: 15,
     speed: 6,
     frameCount: 2,
     aniSpeed: 150,
-    x: 200,
+    x: 0,
     y: 96,
     onUpdate: function (frameRatio) {
       this.onFloor = this.hitTestList(this.x, Math.round(this.y + 1), obstacles);
@@ -76,14 +93,15 @@ window.onload = function () {
         }
       }
 
-      // Check for fall-off and reset
-      if (this.y > 1000) {
-        this.put(200, middleY - 40, obstacles);
+      // Check for fall-off and reset at world x=0
+      if (this.y > game.graphics.canvas.height + 200) {
+        this.put(0, middleY - 40, obstacles);
         this.speedx = 0;
         this.speedy = 0;
+        centerCameraOn(0, this.y);
       }
 
-      // Camera following
+      // Camera following with edge deadzones; start already has x=0 at center
       if (this.x + loc.x < 80) {
         loc.x = 80 - this.x;
       } else if (game.graphics.canvas.width - (this.x + loc.x) < 80) {
@@ -101,20 +119,22 @@ window.onload = function () {
   game.graphics.obstacles = obstacles;
 
   // Generate larger procedural terrain and get middle platform Y
-  const middleY = generateTerrain();
+  middleY = generateTerrain();
+  if (middleY == null) {
+    middleY = game.graphics.canvas.height / 2;
+  }
 
-  // Initialize game state
+  // Initialize game state: guy at world x=0, camera puts that at screen center
   score = 0;
   level = 1;
   mario.visible = true;
   mario.put(0, middleY - 60);
-  game.graphics.loc.x = mario.x - game.graphics.canvas.width / 2;
-  game.graphics.loc.y = mario.y - game.graphics.canvas.height / 2;
+  centerCameraOn(0, mario.y);
 
   // Set up game loop
   game.setTickCallback(game_tick);
   game.setStepCallback(game_step);
-  game.setGameState("running");  
+  game.setGameState("running");
 }
 
 function hslToHex(h, s, l) {
@@ -150,22 +170,22 @@ function randInt(min, max) {
 function generateTerrain() {
   const canvasWidth = game.graphics.canvas.width;
   const canvasHeight = game.graphics.canvas.height;
-  
+
   let currentX = -2000; // Left edge
-  let currentTopY = canvasHeight - gridSize * randInt(2, 4); 
-  let midX, midY;
+  let currentTopY = canvasHeight - gridSize * randInt(2, 4);
+  let midY;
 
   while (currentX < 2000) {
     const width = randInt(1, 6);
     const scaleX = width / 32;
     const height = randInt(2, 6);
     const scaleY = height / 32;
-    
+
     const hue = Math.floor(Math.random() * 361);
     const saturation = Math.floor(Math.random() * 11) + 90;
     const lightness = 50;
     const color = hslToHex(hue, saturation, lightness);
-   
+
     const platform = new Sprite({
       url: "floor.png",
       image_blend: color,
@@ -175,11 +195,11 @@ function generateTerrain() {
       y: currentTopY
     });
     obstacles.push(platform);
-    
+
     if (currentX < 0 && currentX + width > 0) {
       midY = currentTopY;
     }
-    
+
     currentX += width + randInt(-2, 4);
     currentTopY += randInt(-2, 2);
   }
@@ -192,7 +212,7 @@ function game_tick(ratio) {
 }
 
 function game_step(ratio) {
-  scoreLbl.innerHTML = 
+  scoreLbl.innerHTML =
     `X: ${mario.x.toFixed(1).padStart(6)}  Y: ${mario.y.toFixed(1).padStart(6)}<br>` +
     `Sx: ${mario.speedx.toFixed(1).padStart(4)}  Sy: ${mario.speedy.toFixed(1).padStart(4)}  ` +
     `${mario.onFloor ? "Floor" : "Air"}  Facing: ${mario.facingx}`;
@@ -204,12 +224,12 @@ function game_step(ratio) {
 game.graphics.drawBg = function () {
   game.graphics.ctx.fillStyle = "#111133";
   game.graphics.ctx.fillRect(0, 0, game.graphics.canvas.width, game.graphics.canvas.height);
-   drawControllerDebug();
+  drawControllerDebug();
 };
 
 function updateMarioDir() {
   const controller = game.controllers.getController();
-  
+
   mario.speedx = 0;
   mario.speedy = mario.speedy || 0;
 
@@ -222,7 +242,7 @@ function updateMarioDir() {
       mario.jumped = true;
       mario.framei = 2;
     }
-  }  
+  }
 
   if (mario.speedx < 0) mario.facingx = -1;
   else if (mario.speedx > 0) mario.facingx = 1;

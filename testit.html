@@ -2,39 +2,40 @@
 <meta charset="utf-8">
 <title>Get'em</title>
 <style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
 
 @font-face {
   font-family: "Arcade";
   src: url("ARCADE_N.TTF");
 }
 
-.text
-{	
-	position: absolute;
-	text-align: center;
-	font: 20px Arcade;
-	color: #FFFFFF;
-	text-shadow: 3px 3px 1px #000000;
+.text {
+  position: absolute;
+  text-align: center;
+  font: 20px Arcade;
+  color: #FFFFFF;
+  text-shadow: 3px 3px 1px #000000;
 }
 
-.title
-{	
-	position: absolute;
-	text-align: center;
-	font: 60px Arcade;
-	color: #bbcc99;
-	text-shadow: 5px 5px 2px #000000;
+.title {
+  position: absolute;
+  text-align: center;
+  font: 60px Arcade;
+  color: #bbcc99;
+  text-shadow: 5px 5px 2px #000000;
 }
-
-
 </style>
-
 <html>
-<body style='margin:0px;'>
-<div id="game_box" style="position:relative;width:1200px;display:inline-block;margin: 0 auto;"></div>
+<body>
+<div id="game_box"></div>
 </body>
 </html>
-
 <script src="./bobs_completely_adequate_js_game_engine.js"></script>
-
 <script src="./testit.js"></script>
